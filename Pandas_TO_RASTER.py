@@ -18,6 +18,7 @@ def readPoints(db_connect,epsg_code):
         conn = psycopg2.connect(db_connect)
     except:
         print 'Could Not connect to database'
+        sys.exit()
         
     df = pd.read_sql_query('select easting, northing, texture, sidescan_intensity from mosaic_2014_09', con=conn)
     conn.close()
@@ -38,36 +39,33 @@ def readPoints(db_connect,epsg_code):
     del df
     return data1  
     
-    
-def get_point_bounds(lon_in,lat_in):      
-    min_lon = np.min(lon_in)
-    min_lat = np.min(lat_in)
-    max_lon = np.max(lon_in)
-    max_lat = np.max(lat_in)    
-    return min_lon, min_lat, max_lon, max_lat
-    
 def CreateRaster(xv,yv,gridded_result,geotransform,proj,cols,rows,driverName,outFile):  
-    
+    '''
+    Exports data to GTiff Raster
+    '''
+    gridded_result = np.squeeze(gridded_result)
+    shp = np.shape(gridded_result)
+    print 'Shape of squeezed array is %s' %(shp,)
     gridded_result[np.isinf(gridded_result)] = -99
-    grid2plot = np.ma.masked_invalid(gridded_result)
-    #Creating the file  
-    success, inverse_geotransform = gdal.InvGeoTransform(geotransform)    
+    gridded_result[gridded_result>100] = -99
     driver = gdal.GetDriverByName(driverName)
     ds = driver.Create( outFile, cols, rows, 1, gdal.GDT_Float32)      
     if proj is not None:  
         ds.SetProjection(proj.ExportToWkt()) 
     ds.SetGeoTransform(geotransform)
-    ds.GetRasterBand(1).WriteArray(grid2plot)
-    ds.GetRasterBand(1).FlushCache()
-    ds.GetRasterBand(1).ComputeStastics(False)
+    ss_band = ds.GetRasterBand(1)
+    ss_band.WriteArray(gridded_result)
+    ss_band.SetNoDataValue(-99)
+    ss_band.FlushCache()
+    ss_band.ComputeStatistics(False)
     del ds
         
-
 def resample(orig_def, target_def, ss):
+    '''
+    Calculates Numpy Array for Raster Generation
+    '''
     result = kd_tree.resample_nearest(orig_def, ss, target_def, radius_of_influence=1, fill_value=None, nprocs = cpu_count()-1)
     return result
-    
-
     
 def get_raster_size(minx, miny, maxx, maxy, cell_width, cell_height):
     """
@@ -90,7 +88,7 @@ if  __name__ == '__main__':
     
     res = 0.25
     
-    #Pyproj method to find lat/lon from Import
+    #Resampling Section
     trans =  pyproj.Proj(init="epsg:26949")
     lon_in, lat_in = trans(data['e'].values,data['n'].values,inverse=True)
     orig_def = geometry.SwathDefinition(lons=lon_in.flatten(), lats=lat_in.flatten())
@@ -98,7 +96,6 @@ if  __name__ == '__main__':
     grid_x, grid_y = np.meshgrid(np.arange(xMin, xMax, res), np.arange(yMin,yMax, res))
     lon_grid, lat_grid = trans(grid_x, grid_y, inverse=True)
     target_def = geometry.SwathDefinition(lons=lon_grid.flatten(), lats=lat_grid.flatten())
-    
     #Build Numpy Array for imput to create Raster Function
     grid_array = np.array(data['ss'])
     print 'Now Gridding...'
@@ -112,19 +109,11 @@ if  __name__ == '__main__':
 
     #Input parameters for output raster    
     driverName= 'GTiff'
-    outFile = r'C:\workspace\Reach_4a\mosaic\test_sr.tif'
+    outFile = r'C:\workspace\Reach_4a\mosaic\test_6.tif'
     power =1
     smoothing=20         
     proj = data['proj']
     
     print 'Now Making Raster'
     ZI= CreateRaster(data['e'], data['n'], gridded_result, geotransform, proj,cols,rows,driverName,outFile) 
-    
-#    #Debugging stuff
-#    proj = osr.SpatialReference()
-#    proj.ImportFromEPSG(26949)
-#    proj.ExportToWkt()
-#    xv=data['e'] 
-#    yv=data['n'] 
-#    values=data['ss']
-#    ZI = CreateRaster(xv,yv,values,geotransform,proj,xSize,ySize,power,smoothing,driverName,outFile)
+
