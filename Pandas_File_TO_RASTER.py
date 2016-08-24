@@ -76,7 +76,6 @@ if  __name__ == '__main__':
     #Data Import Section
     epsg_code=26949
     for cloud in files:
-        cloud = files[0]
         win_size = cloud.split('\\')[-1][:2]
         ss_raster = r"C:\workspace\Merged_SS\window_analysis\raster"+ os.sep +'ss_' + win_size + '_raster.tif'
         tex_raster = r"C:\workspace\Merged_SS\window_analysis\raster"+ os.sep +'tex_' + win_size + '_raster.tif'
