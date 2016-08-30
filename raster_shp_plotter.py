@@ -92,6 +92,7 @@ im = m.contourf(x,y,data.T, cmap='Greys_r',levels=ss_level)
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 cbr = plt.colorbar(im, cax=cax)
+cbr.set_label('Sidescan Intensity [dBw]', size=10)
 #read shapefile and create polygon collections
 m.readshapefile( r"C:\workspace\Merged_SS\window_analysis\shapefiles\tex_seg_800_geo","layer",drawbounds = False)
 
