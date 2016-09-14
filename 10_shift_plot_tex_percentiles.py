@@ -119,7 +119,7 @@ tex_levels=[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.60,0.65,0.70,0.7
        1.8,1.85,1.9,1.95,2.0,2.05,2.1,2.15,2.2,2.25,2.3,2.35,2.4]
 ss_level=[0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35]
 
-fig = plt.figure(figsize=(24,36))
+fig = plt.figure(figsize=(22,32))
 
 ax = fig.add_subplot(3,5,1)
 ax.set_title('50 square pixel \n 25th - 50th Percentile')
@@ -205,7 +205,7 @@ cbr2 = plt.colorbar(im2,cax=cax2)
 #
 #
 ax4 = fig.add_subplot(3,5,5)
-ax4.set_title('160 square pixel:25th - 50th Percentile')
+ax4.set_title('160 square pixel \n 25th - 50th Percentile')
 m = Basemap(projection='merc', 
             epsg=cs2cs_args.split(':')[1], 
             llcrnrlon=np.min(glon), 
@@ -346,7 +346,7 @@ cbr = plt.colorbar(im, cax=cax)
 cbr2 = plt.colorbar(im2,cax=cax2)
 
 ax2 = fig.add_subplot(3,5,8)
-ax2.set_title('80 square pixel:50th - 75th Percentile')
+ax2.set_title('80 square pixel \n 50th - 75th Percentile')
 m = Basemap(projection='merc', 
             epsg=cs2cs_args.split(':')[1], 
             llcrnrlon=np.min(glon), 
@@ -528,7 +528,7 @@ cbr = plt.colorbar(im, cax=cax)
 cbr2 = plt.colorbar(im2,cax=cax2)
 
 ax2 = fig.add_subplot(3,5,13)
-ax2.set_title('80 square pixel:75th - 100th Percentile')
+ax2.set_title('80 square pixel \n 75th - 100th Percentile')
 m = Basemap(projection='merc', 
             epsg=cs2cs_args.split(':')[1], 
             llcrnrlon=np.min(glon), 
@@ -590,7 +590,7 @@ cbr2 = plt.colorbar(im2,cax=cax2)
 #plt.show()
 
 plt.suptitle('Spatial Variations of texture lenthscales', fontsize=12)
-plt.savefig(r"C:\workspace\Merged_SS\window_analysis\10_percent_shift\output\tex_mutiple_percentiles.png",dpi=1000)
+plt.savefig(r"C:\workspace\Merged_SS\window_analysis\10_percent_shift\output\tex_mutiple_percentiles.png",dpi=600)
 #plt.show()
 
 plt.close()
