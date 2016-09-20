@@ -187,5 +187,5 @@ for sp in ax2.spines.itervalues():
 the_table = table(ax2, pivot_table.round(3),loc='center left',colWidths=[0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1])
 the_table.set_fontsize(10)
 plt.tight_layout(w_pad=10)#w_pad = 
-plt.savefig(r"C:\workspace\Merged_SS\window_analysis\output\tex_seg_raster_table.png", dpi=1000)
+plt.savefig(r"C:\workspace\Merged_SS\window_analysis\10_percent_shift\output\tex_seg_raster_table.png", dpi=1000)
 #plt.show()
