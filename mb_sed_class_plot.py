@@ -9,9 +9,11 @@ from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import gdal
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import pyproj
 import pandas as pd
+from pandas.tools.plotting import table
 
 
 def assign_class(row):
@@ -110,6 +112,16 @@ may_lon[np.max(may_lon)>np.nanmax(glon)] = np.nan
 may_lat[np.min(may_lat)<np.nanmin(glat)] = np.nan
 may_lat[np.max(may_lat)>np.nanmax(glat)] = np.nan
 may_sed_class[np.isnan(may_lat.T)]= np.nan
+#may_sed_class[np.isnan(aug_sed_class.T)] = np.nan
+
+#legend Stuff
+colors=['#ca0020','#f4a582','#f7f7f7','#92c5de','#0571b0']
+a_val=1
+circ1 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[0],alpha=a_val)
+circ2 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[1],alpha=a_val)
+circ3 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[2],alpha=a_val)
+circ4 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[3],alpha=a_val)
+circ5 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[4],alpha=a_val)
 
 print 'Now plotting August 2013 Acoutic sediment classifications...'
 #Begin the plot
@@ -123,12 +135,13 @@ m = Basemap(projection='merc',
             llcrnrlat=np.nanmin(glat)-0.0006,
             urcrnrlon=np.nanmax(glon)+0.0009, 
             urcrnrlat=np.nanmax(glat)+0.0006)
-m.wmsimage(server='http://grandcanyon.usgs.gov/arcgis/services/Imagery/ColoradoRiverImageryExplorer/MapServer/WmsServer?', layers=['0'], xpixels=1000)
+m.wmsimage(server='http://grandcanyon.usgs.gov/arcgis/services/Imagery/ColoradoRiverImageryExplorer/MapServer/WmsServer?', layers=['3'], xpixels=1000)
 x,y = m.projtran(aug_13_lon, aug_13_lat)
-im = m.contourf(x,y,aug_sed_class.T, cmap='YlOrRd', levels=[0,1,2,3,4,5])
+im = m.contourf(x,y,aug_sed_class.T, cmap='coolwarm', levels=[0,1,2,3,4,5])
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.1)
 cbr = plt.colorbar(im, cax=cax)
+ax.legend((circ1, circ2, circ3,circ4,circ5),('rock','sand/rock','Gravel','Sand/Gravel','sand'),numpoints=1, loc='best')
 
 print 'Now plotting May 2014 Acoustic Sediment Classifications...'
 ax = plt.subplot2grid((5,2),(0, 1),rowspan=4)
@@ -139,12 +152,13 @@ m = Basemap(projection='merc',
             llcrnrlat=np.nanmin(may_lat)-0.0006,
             urcrnrlon=np.nanmax(may_lon)+0.0009, 
             urcrnrlat=np.nanmax(may_lat)+0.0006)
-m.wmsimage(server='http://grandcanyon.usgs.gov/arcgis/services/Imagery/ColoradoRiverImageryExplorer/MapServer/WmsServer?', layers=['0'], xpixels=1000)
+m.wmsimage(server='http://grandcanyon.usgs.gov/arcgis/services/Imagery/ColoradoRiverImageryExplorer/MapServer/WmsServer?', layers=['3'], xpixels=1000)
 x,y = m.projtran(may_lon, may_lat)
-im = m.contourf(x,y,may_sed_class.T, cmap='YlOrRd', levels=[0,1,2,3,4,5])
+im = m.contourf(x,y,may_sed_class.T, cmap='coolwarm', levels=[0,1,2,3,4,5])
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.1)
 cbr = plt.colorbar(im, cax=cax)
+ax.legend((circ1, circ2, circ3,circ4,circ5),('rock','sand/rock','Gravel','Sand/Gravel','sand'),numpoints=1, loc='best')
 
 #convert arrays to histograms
 aug_df = pd.DataFrame(aug_sed_class.flatten())
@@ -163,14 +177,24 @@ ax1 = plt.subplot2grid((5,2),(4, 0))
 aug_df.groupby('sed5name').size().plot(kind='bar', ax=ax1,rot=45)
 ax1.set_ylabel('Frequency')
 ax1.set_xlabel('Substrate Type')
+table_aug = pd.pivot_table(aug_df,index=['sed5name'], values = ['sed5class'],aggfunc='count')
+table_aug['Percent_Area'] = table_aug['sed5class']/aug_df.sed5name.count()
+table_aug = table_aug[['Percent_Area']]
+table1 = table(ax1, np.round(table_aug,3), loc='upper right',colWidths=[0.2])
 
 
 ax = plt.subplot2grid((5,2),(4, 1),sharey=ax1)
 may_df.groupby('sed5name').size().plot(kind='bar', ax=ax,rot=45)
+table_may = pd.pivot_table(may_df,index=['sed5name'], values = ['sed5class'],aggfunc='count')
+table_may['Percent_Area'] = table_may['sed5class']/may_df.sed5name.count()
+table_may = table_may[['Percent_Area']]
+table2 = table(ax, np.round(table_may,3), loc='upper right',colWidths=[0.2])
 ax.set_ylabel('Frequency')
 ax.set_xlabel('Substrate Type')
 
 plt.tight_layout()
 print 'Now Saving figure...'
-plt.savefig(r"C:\workspace\Reach_4a\Multibeam\mb_sed_class\output\mb_aug_may_comparison.png",dpi=1000)
+plt.savefig(r"C:\workspace\Reach_4a\Multibeam\mb_sed_class\output\mb_aug_may_comparison_diverging_cmap.png",dpi=1000)
 #plt.show()
+
+
