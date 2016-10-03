@@ -1,0 +1,164 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Sep 23 11:10:05 2016
+
+@author: dan
+"""
+
+from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import gdal
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import numpy as np
+import pyproj
+import pandas as pd
+from pandas.tools.plotting import table
+
+
+def assign_class(row):
+    if row.sed5class == 1:
+        return 'sand'
+    if row.sed5class == 2:
+        return 'sand/gravel'
+    if row.sed5class == 3:
+        return 'gravel'
+    if row.sed5class == 4:
+        return 'sand/rock'
+    if row.sed5class == 5:
+        return 'rock'
+               
+#Load R02028
+R02028_raster = r"C:\workspace\Reach_4a\Multibeam\mb_sed_class\output\ss_R02028.tif"
+ds = gdal.Open(R02028_raster)
+R02028 = ds.GetRasterBand(1).ReadAsArray()
+R02028[R02028<0]=np.nan
+gt = ds.GetGeoTransform()
+proj = ds.GetProjection()
+ 
+xres = gt[1]
+yres = gt[5]
+
+xmin = gt[0] + xres * 0.5
+xmax = gt[0] + (xres * ds.RasterXSize) - xres * 0.5
+ymin = gt[3] + (yres * ds.RasterYSize) + yres * 0.5
+ymax = gt[3] - yres * 0.5
+extent = [xmin,xmax,ymin,ymax]
+del ds
+
+# create a grid of xy coordinates in the original projection
+xx, yy = np.mgrid[xmin:xmax+xres:xres, ymax+yres:ymin:yres]
+trans =  pyproj.Proj(init="epsg:26949") 
+r28_lon, r28_lat = trans(xx, yy, inverse=True)
+del xx, yy, xmin, xmax, ymin, ymax
+
+
+#Load R02031
+R02031_raster = r"C:\workspace\Reach_4a\Multibeam\mb_sed_class\output\ss_R02031.tif"
+ds = gdal.Open(R02031_raster)
+R02031 = ds.GetRasterBand(1).ReadAsArray()
+R02031[R02031<0]=np.nan
+gt = ds.GetGeoTransform()
+proj = ds.GetProjection()
+
+xres = gt[1]
+yres = gt[5]
+
+# get the edge coordinates and add half the resolution 
+# to go to center coordinates
+xmin = gt[0] + xres * 0.5
+xmax = gt[0] + (xres * ds.RasterXSize) - xres * 0.5
+ymin = gt[3] + (yres * ds.RasterYSize) + yres * 0.5
+ymax = gt[3] - yres * 0.5
+extent = [xmin,xmax,ymin,ymax]
+del ds
+
+xx, yy = np.mgrid[xmin:xmax+xres:xres, ymax+yres:ymin:yres]
+r31_lon, r31_lat = trans(xx, yy, inverse=True)
+del xx, yy, xmin, xmax, ymin, ymax
+
+
+#legend Stuff
+colors=['#ca0020','#f4a582','#f7f7f7','#92c5de','#0571b0']
+a_val=1
+circ1 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[0],alpha=a_val)
+circ2 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[1],alpha=a_val)
+circ3 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[2],alpha=a_val)
+circ4 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[3],alpha=a_val)
+circ5 = Line2D([0], [0], linestyle="none", marker="o", markersize=10, markerfacecolor=colors[4],alpha=a_val)
+
+print 'Now plotting R02028 Acoutic sediment classifications...'
+#Begin the plot
+cs2cs_args = "epsg:26949"
+fig = plt.figure(figsize=(15,12))
+ax = plt.subplot2grid((5,2),(0, 0),rowspan=4)
+ax.set_title('August 2013 Acousic \n Sediment Classifications')
+m = Basemap(projection='merc', 
+            epsg=cs2cs_args.split(':')[1], 
+            llcrnrlon=np.nanmin(glon)-0.0009, 
+            llcrnrlat=np.nanmin(glat)-0.0006,
+            urcrnrlon=np.nanmax(glon)+0.0009, 
+            urcrnrlat=np.nanmax(glat)+0.0006)
+m.wmsimage(server='http://grandcanyon.usgs.gov/arcgis/services/Imagery/ColoradoRiverImageryExplorer/MapServer/WmsServer?', layers=['3'], xpixels=1000)
+x,y = m.projtran(aug_13_lon, aug_13_lat)
+im = m.contourf(x,y,aug_sed_class.T, cmap='coolwarm', levels=[0,1,2,3,4,5])
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="5%", pad=0.1)
+cbr = plt.colorbar(im, cax=cax)
+ax.legend((circ1, circ2, circ3,circ4,circ5),('rock','sand/rock','Gravel','Sand/Gravel','sand'),numpoints=1, loc='best')
+
+print 'Now plotting May 2014 Acoustic Sediment Classifications...'
+ax = plt.subplot2grid((5,2),(0, 1),rowspan=4)
+ax.set_title('May 2014 Acousic \n Sediment Classifications')
+m = Basemap(projection='merc', 
+            epsg=cs2cs_args.split(':')[1], 
+            llcrnrlon=np.nanmin(may_lon)-0.0009, 
+            llcrnrlat=np.nanmin(may_lat)-0.0006,
+            urcrnrlon=np.nanmax(may_lon)+0.0009, 
+            urcrnrlat=np.nanmax(may_lat)+0.0006)
+m.wmsimage(server='http://grandcanyon.usgs.gov/arcgis/services/Imagery/ColoradoRiverImageryExplorer/MapServer/WmsServer?', layers=['3'], xpixels=1000)
+x,y = m.projtran(may_lon, may_lat)
+im = m.contourf(x,y,may_sed_class.T, cmap='coolwarm', levels=[0,1,2,3,4,5])
+divider = make_axes_locatable(ax)
+cax = divider.append_axes("right", size="5%", pad=0.1)
+cbr = plt.colorbar(im, cax=cax)
+ax.legend((circ1, circ2, circ3,circ4,circ5),('rock','sand/rock','Gravel','Sand/Gravel','sand'),numpoints=1, loc='best')
+
+#convert arrays to histograms
+aug_df = pd.DataFrame(aug_sed_class.flatten())
+aug_df.rename(columns={0:'sed5class'}, inplace=True)
+aug_df = aug_df.dropna()
+aug_df['sed5name'] = aug_df.apply(lambda row: assign_class(row), axis=1)
+
+
+may_df = pd.DataFrame(may_sed_class.flatten())
+may_df.rename(columns={0:'sed5class'}, inplace=True)
+may_df = may_df.dropna()
+may_df['sed5name'] = may_df.apply(lambda row: assign_class(row), axis=1)
+
+print 'Now plotting distributions...'
+ax1 = plt.subplot2grid((5,2),(4, 0))
+aug_df.groupby('sed5name').size().plot(kind='bar', ax=ax1,rot=45)
+ax1.set_ylabel('Frequency')
+ax1.set_xlabel('Substrate Type')
+table_aug = pd.pivot_table(aug_df,index=['sed5name'], values = ['sed5class'],aggfunc='count')
+table_aug['Percent_Area'] = table_aug['sed5class']/aug_df.sed5name.count()
+table_aug = table_aug[['Percent_Area']]
+table1 = table(ax1, np.round(table_aug,3), loc='upper right',colWidths=[0.2])
+
+
+ax = plt.subplot2grid((5,2),(4, 1),sharey=ax1)
+may_df.groupby('sed5name').size().plot(kind='bar', ax=ax,rot=45)
+table_may = pd.pivot_table(may_df,index=['sed5name'], values = ['sed5class'],aggfunc='count')
+table_may['Percent_Area'] = table_may['sed5class']/may_df.sed5name.count()
+table_may = table_may[['Percent_Area']]
+table2 = table(ax, np.round(table_may,3), loc='upper right',colWidths=[0.2])
+ax.set_ylabel('Frequency')
+ax.set_xlabel('Substrate Type')
+
+plt.tight_layout()
+print 'Now Saving figure...'
+plt.savefig(r"C:\workspace\Reach_4a\Multibeam\mb_sed_class\output\mb_aug_may_comparison_diverging_cmap.png",dpi=1000)
+#plt.show()
+
+
